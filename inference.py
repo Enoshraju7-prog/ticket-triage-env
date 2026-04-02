@@ -1,6 +1,7 @@
 """
-Baseline inference script for the Ticket Triage OpenEnv environment.
-Required env vars: IMAGE_NAME, HF_TOKEN (or API_KEY), API_BASE_URL, MODEL_NAME
+Baseline inference script for Ticket Triage OpenEnv environment.
+Required env vars: HF_TOKEN (or API_KEY), API_BASE_URL, MODEL_NAME
+Optional: IMAGE_NAME (if running via local Docker instead of HF Space)
 """
 import asyncio
 import os
@@ -15,6 +16,7 @@ API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 TASK_NAME    = os.getenv("TICKET_TRIAGE_TASK", "classify")
+SPACE_URL    = os.getenv("SPACE_URL", "https://enodev88-ticket-triage-env.hf.space")
 BENCHMARK    = "ticket_triage"
 MAX_STEPS    = 12
 TEMPERATURE  = 0.3
@@ -61,14 +63,21 @@ def get_agent_response(client, obs):
 
 async def main():
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-    if not IMAGE_NAME:
-        raise ValueError("Set IMAGE_NAME env var to your Docker image name.")
-    env = await TicketTriageEnv.from_docker_image(IMAGE_NAME)
+
+    # Connect via Docker image if IMAGE_NAME set, otherwise use live HF Space
+    if IMAGE_NAME:
+        env = await TicketTriageEnv.from_docker_image(IMAGE_NAME)
+    else:
+        env = TicketTriageEnv(base_url=SPACE_URL)
+        await env.connect()
+
     rewards: List[float] = []
     steps_taken = 0
     score = 0.0
     success = False
+
     log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
+
     try:
         result = await env.reset()
         obs = result.observation

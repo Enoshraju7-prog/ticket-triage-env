@@ -17,13 +17,14 @@ class TicketTriageEnv(EnvClient[TicketTriageAction, TicketTriageObservation, Sta
 
     def _parse_result(self, payload: Dict[str, Any]) -> StepResult[TicketTriageObservation]:
         obs_data = payload.get("observation", {})
-        # Pydantic ignores unknown fields gracefully via model_validate
         obs = TicketTriageObservation.model_validate(obs_data)
+        reward_val = payload.get("reward")
+        if reward_val is None:
+            reward_val = obs_data.get("last_reward", 0.0)
         return StepResult(
             observation=obs,
-            reward=float(payload.get("reward", 0.0)),
+            reward=float(reward_val or 0.0),
             done=bool(payload.get("done", False)),
-            info=payload.get("info", {}),
         )
 
     def _parse_state(self, payload: Dict[str, Any]) -> State:
