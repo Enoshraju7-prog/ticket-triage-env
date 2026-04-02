@@ -17,3 +17,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["ticket_triage_env*", "server*"]
+
+[project.scripts]
+server = "server.app:main"
