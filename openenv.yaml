@@ -1,0 +1,16 @@
+spec_version: 1
+name: ticket_triage_env
+type: environment
+runtime: docker
+app: server.app:app
+port: 7860
+description: >
+  Customer support ticket triage. An LLM agent classifies, prioritizes,
+  and drafts responses to real-world support tickets.
+tasks:
+  - name: classify
+    difficulty: easy
+  - name: triage
+    difficulty: medium
+  - name: resolve
+    difficulty: hard
